@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace PushNotificationConsole.Entities
+﻿namespace PushNotificationConsole.Entities.FcmModel
 {
     public class Notification
     {

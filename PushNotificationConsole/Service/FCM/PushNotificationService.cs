@@ -1,12 +1,12 @@
 ﻿using Newtonsoft.Json;
-using PushNotificationConsole.Entities;
+using PushNotificationConsole.Entities.FcmModel;
 using System;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace PushNotificationConsole.Service
+namespace PushNotificationConsole.Service.FCM
 {
     public class PushNotificationService : IDisposable
     {
