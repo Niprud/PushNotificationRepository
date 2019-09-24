@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using PushNotificationConsole.Entities.FcmModel;
 using System;
+using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -10,9 +11,9 @@ namespace PushNotificationConsole.Service.FCM
 {
     public class PushNotificationService : IDisposable
     {
-        private readonly Uri FireBasePushNotificationURL = new Uri("https://fcm.googleapis.com/fcm/send");
-        private readonly string SenderID = "1057831725262";
-        private readonly string ServerKey = "AAAA9kuvKM4:APA91bG71WENNJDN0g9zcGrPuNfxoqAFCfJpNMPzOoWKSESSaDGkROdF-vuowKcizEJ3f1hmXY0WSeOw4YaXsrB2LaLztuZelB3RT-L0Fiz6s_Y04aImMld-SimAsM6dEH_iLdfIwSkQ";
+        private readonly string FireBasePushNotificationURL = ConfigurationManager.AppSettings["url"].ToString(); //new Uri("https://fcm.googleapis.com/fcm/send");
+        private readonly string SenderID = ConfigurationManager.AppSettings["SenderID"].ToString();
+        private readonly string ServerKey = ConfigurationManager.AppSettings["ServerKey"].ToString();
         private readonly Lazy<HttpClient> lazyHttp = new Lazy<HttpClient>();
         public async Task<bool> SendPushNotification(string[] deviceTokens, string title, string body, object data)
         {

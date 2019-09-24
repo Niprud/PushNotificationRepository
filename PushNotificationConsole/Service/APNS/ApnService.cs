@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Configuration;
 
 namespace PushNotificationConsole.Service.APNS
 {
@@ -17,7 +18,7 @@ namespace PushNotificationConsole.Service.APNS
             {ApnServerType.Production, "https://api.push.apple.com:443" }
         };
 
-        private const string apnidHeader = "123e4567-e89b-12d3-a456-42665544000"; //apns-id(UUID)
+        private readonly string apnIdHeader = ConfigurationManager.AppSettings["apnIdHeader"].ToString();   //apns-id(UUID)
 
         private readonly string p8privateKey;
         private readonly string p8privateKeyId;
@@ -60,7 +61,7 @@ namespace PushNotificationConsole.Service.APNS
 
             if (!string.IsNullOrWhiteSpace(apnsId))
             {
-                request.Headers.Add(apnidHeader, apnsId);
+                request.Headers.Add(apnIdHeader, apnsId);
             }
 
             using (var response = await http.Value.SendAsync(request))
