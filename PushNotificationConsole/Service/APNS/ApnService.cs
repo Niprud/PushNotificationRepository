@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Configuration;
+using System.Security.Authentication;
 
 namespace PushNotificationConsole.Service.APNS
 {
@@ -14,11 +15,11 @@ namespace PushNotificationConsole.Service.APNS
     {
         private static readonly Dictionary<ApnServerType, string> servers = new Dictionary<ApnServerType, string>
         {
-            {ApnServerType.Development, "https://api.sandbox.push.apple.com:443" },   //https://api.development.push.apple.com:443
-            {ApnServerType.Production, "https://api.push.apple.com:443" }
+            {ApnServerType.Development, "https://api.sandbox.push.apple.com:443" },   //https://api.development.push.apple.com:443 
+            {ApnServerType.Production, "https://api.push.apple.com:443" } // port:2197
         };
 
-        private readonly string apnIdHeader = ConfigurationManager.AppSettings["apnIdHeader"].ToString();   //apns-id(UUID)
+        private readonly string apnIdHeader = ConfigurationManager.AppSettings["apnIdHeader"].ToString();   //apns-id(UUID) A canonical UUID that identifies the notification
 
         private readonly string p8privateKey;
         private readonly string p8privateKeyId;
@@ -29,7 +30,7 @@ namespace PushNotificationConsole.Service.APNS
         private readonly Lazy<HttpClient> http;
         private readonly Lazy<WinHttpHandler> handler;
 
-        public ApnService(string p8privateKey, string p8privateKeyId, string teamId, string appBundleIdentifier,ApnServerType server)
+        public ApnService(string p8privateKey, string p8privateKeyId, string teamId, string appBundleIdentifier, ApnServerType server)
         {
             this.p8privateKey = p8privateKey;
             this.p8privateKeyId = p8privateKeyId;
@@ -55,13 +56,14 @@ namespace PushNotificationConsole.Service.APNS
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", jwtToken.Value);
             request.Headers.TryAddWithoutValidation(":method", "POST");
             request.Headers.TryAddWithoutValidation(":path", path);
-            request.Headers.Add("apns-topic", appBundleIdentifier);   //com.example.MyApp
+            request.Headers.Add("apns-push-type", "alert"); // alert or background
+            request.Headers.Add("apns-topic", appBundleIdentifier);   //com.example.MyApp, the bundle ID for your app
             request.Headers.Add("apns-expiration", apnsExpiration.ToString());
-            request.Headers.Add("apns-priority", apnsPriority.ToString());
+            request.Headers.Add("apns-priority", apnsPriority.ToString()); // 10 or 5
 
             if (!string.IsNullOrWhiteSpace(apnsId))
             {
-                request.Headers.Add(apnIdHeader, apnsId);
+                request.Headers.Add(apnIdHeader, apnsId); // The apns-id value from the request. If no value was included in the request, the server creates a new UUID and returns it in this header.
             }
 
             using (var response = await http.Value.SendAsync(request))
@@ -81,8 +83,8 @@ namespace PushNotificationConsole.Service.APNS
 
         private string CreateJwtToken()
         {
-            var header = JsonHelper.Serialize(new { alg = "ES256", kid = p8privateKeyId });
-            var payload = JsonHelper.Serialize(new { iss = teamId, iat = ToEpoch(DateTime.UtcNow) });        
+            var header = JsonHelper.Serialize(new { alg = "ES256", kid = p8privateKeyId }); //The encryption algorithm (alg), A 10-character key identifier (kid) key
+            var payload = JsonHelper.Serialize(new { iss = teamId, iat = ToEpoch(DateTime.UtcNow) }); //The issuer(iss) registered claim key, whose value is your 10 - character Team ID, The issued at (iat) registered claim key
             var key = CngKey.Import(Convert.FromBase64String(p8privateKey), CngKeyBlobFormat.Pkcs8PrivateBlob);
 
             using (var dsa = new ECDsaCng(key))

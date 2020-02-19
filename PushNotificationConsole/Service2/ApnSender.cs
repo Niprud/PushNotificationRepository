@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
+using PushNotificationConsole.NotificationLog.ApnLog;
 using PushSharp.Apple;
 using System;
 using System.Collections.Generic;
@@ -21,10 +22,11 @@ namespace PushNotificationConsole.Service2
                 var appleCert = File.ReadAllBytes(path);
 
                 var config = new ApnsConfiguration(ApnsConfiguration.ApnsServerEnvironment.Production, appleCert, "password");
+                
 
                 // Create a new broker
                 var apnsBroker = new ApnsServiceBroker(config);
-
+                
                 // Wire up events
                 apnsBroker.OnNotificationFailed += (notification, aggregateEx) =>
                 {
@@ -35,19 +37,20 @@ namespace PushNotificationConsole.Service2
                         // See what kind of exception it was to further diagnose
                         if (ex is ApnsNotificationException)
                         {
-                            var notificationException = (ApnsNotificationException)ex;
-
-                            var apnsNotification = notificationException.Notification;
-                            var statusCode = notificationException.ErrorStatusCode;
-                            string desc = $"Apple Notification Failed: ID={apnsNotification.Identifier}, Code={statusCode}";
-                            Console.WriteLine(desc);
+                            //var notificationException = (ApnsNotificationException)ex;
+                            //var apnsNotification = notificationException.Notification;
+                            //var statusCode = notificationException.ErrorStatusCode;
+                            //string desc = $"Apple Notification Failed: ID={apnsNotification.Identifier}, Code={statusCode}";
+                            //Console.WriteLine(desc);
+                            ApnLog.WriteErrorLog(ex);
 
                         }
                         else
                         {
-                            string desc = $"Apple Notification Failed for some unknown reason : {ex.InnerException}";
+                            //string desc = $"Apple Notification Failed for some unknown reason : {ex.InnerException}";
                             // Inner exception might hold more useful information like an ApnsConnectionException			
-                            Console.WriteLine(desc);
+                            //Console.WriteLine(desc);
+                            ApnLog.WriteErrorLog(ex);
 
                         }
                         // Mark it as handled
@@ -57,7 +60,8 @@ namespace PushNotificationConsole.Service2
 
                 apnsBroker.OnNotificationSucceeded += (notification) =>
                 {
-                    Console.WriteLine("Apple Notification Sent successfully!");
+                    ApnLog.WriteSuccessLog(notification);
+                    //Console.WriteLine("Apple Notification Sent successfully!");
                 };
                
                 // Start Proccess 
@@ -68,9 +72,10 @@ namespace PushNotificationConsole.Service2
                     //Queue a notification to send
                     apnsBroker.QueueNotification(new ApnsNotification
                     {
-                        DeviceToken = deviceToken,
+                        DeviceToken = deviceToken,                       
                         Payload = JObject.Parse(("{\"aps\":{\"badge\":1,\"sound\":\"oven.caf\",\"alert\":\"" + (message + "\"}}")))
                     });
+                    
                 }
 
                 apnsBroker.Stop();

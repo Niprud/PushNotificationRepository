@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Configuration;
+using PushNotificationConsole.NotificationLog.FcmLog;
 
 namespace PushNotificationConsole.Service2
 {
@@ -39,52 +40,63 @@ namespace PushNotificationConsole.Service2
                         if (ex is GcmNotificationException)
                         {
                             var notificationException = (GcmNotificationException)ex;
-                            var gcmNotification = notificationException.Notification;
-                            var description = notificationException.Description;
-                            string desc = $"Android Notification Failed: ID = {gcmNotification.MessageId}, Description = {description}";
+                            FcmLog.WriteErrorLog(notificationException);
+
+                            //var gcmNotification = notificationException.Notification;
+                            //var description = notificationException.Description;
+                            //string desc = $"Android Notification Failed: ID = {gcmNotification.MessageId}, Description = {description}";
                         }
                         else if (ex is GcmMulticastResultException)
                         {
                             var multicastException = (GcmMulticastResultException)ex;
 
-                            foreach (var succeededNotification in multicastException.Succeeded)
-                            {
-                                Console.WriteLine($"Android Notification Succeeded: ID={succeededNotification.MessageId}");
-                            }
+                            //foreach (var succeededNotification in multicastException.Succeeded)
+                            //{
+                            //    Console.WriteLine($"Android Notification Succeeded: ID={succeededNotification.MessageId}");
+                            //}
 
-                            foreach (var failedKvp in multicastException.Failed)
-                            {
-                                var n = failedKvp.Key;
-                                var e = failedKvp.Value;
+                            FcmLog.WriteErrorLog(multicastException);
+                            FcmLog.WriteSuccessLog(multicastException);
 
-                                Console.WriteLine($"Android Notification Failed: ID = {n.MessageId}, Description = {e.Message}");
-                            }
+                            //foreach (var failedKvp in multicastException.Failed)
+                            //{
+                            //    var n = failedKvp.Key;
+                            //    var e = failedKvp.Value;
+                            //    FcmLog.WriteErrorLog(multicastException);
+                            //    Console.WriteLine($"Android Notification Failed: ID = {n.MessageId}, Description = {e.Message}");
+                            //}
                         }
                         else if (ex is DeviceSubscriptionExpiredException)
                         {
-                            var expiredException = (DeviceSubscriptionExpiredException)ex;
+                            var deviceSubExpiredException = (DeviceSubscriptionExpiredException)ex;
 
-                            var oldID = expiredException.OldSubscriptionId;
-                            var newID = expiredException.NewSubscriptionId;
+                            FcmLog.WriteErrorLog(deviceSubExpiredException);
 
-                            Console.WriteLine($"Device RegistrationID expired with ID = {oldID}");
 
-                            if (!string.IsNullOrEmpty(newID))
-                            {
-                                //Token has been updated, add it to the DB.
-                                Console.WriteLine($"New Device RegistrationID = {newID}");
-                            }
+                            //var oldID = expiredException.OldSubscriptionId;
+                            //var newID = expiredException.NewSubscriptionId;
+
+                            //Console.WriteLine($"Device RegistrationID expired with ID = {oldID}");
+
+                            //if (!string.IsNullOrEmpty(newID))
+                            //{
+                            //    //Token has been updated, add it to the DB.
+                            //    Console.WriteLine($"New Device RegistrationID = {newID}");
+                            //}
                         }
                         else if (ex is RetryAfterException)
                         {
                             var retryException = (RetryAfterException)ex;
-                            //if you get rate limited, you should stop sending messages until after the Retry
-                            Console.WriteLine($"GCM rate limited, don't send more until after {retryException.RetryAfterUtc}");
+                            FcmLog.WriteErrorLog(retryException);
+
+                            ////if you get rate limited, you should stop sending messages until after the Retry
+                            //Console.WriteLine($"GCM rate limited, don't send more until after {retryException.RetryAfterUtc}");
 
                         }
                         else
                         {
-                            Console.WriteLine("GCM notification failed for some unknown reason");
+                            FcmLog.WriteErrorLog(ex);
+                            //Console.WriteLine("GCM notification failed for some unknown reason");
                         }
                         // mark it as handled
                         return true;
@@ -93,7 +105,8 @@ namespace PushNotificationConsole.Service2
 
                 gcmBroker.OnNotificationSucceeded += (notification) =>
                 {
-                    Console.WriteLine("GCM Notification Sent!");
+                    //Console.WriteLine("GCM Notification Sent!");
+                    FcmLog.WriteSuccessLog(notification);
                     result = true;
                 };
 
